@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Jarvis">
+  <meta name="application-name" content="Jarvis">
+  <meta name="theme-color" content="#0f0e0c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Jarvis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; -webkit-text-size-adjust: 100%; }
+    body {
+      height: 100%; width: 100%; overflow: hidden;
+      background: #0f0e0c; color: #f0ebe3;
+      font-family: 'Crimson Pro', Georgia, serif;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+    #root { height: 100%; display: flex; flex-direction: column; }
+    input, textarea, select, button { font-family: inherit; }
+
+    /* Welcome */
+    @keyframes wfu { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    .w-anim { animation: wfu .4s ease both; }
+    .rc {
+      width: 100%; background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.09); border-radius: 16px;
+      padding: 16px 18px; cursor: pointer;
+      display: flex; align-items: center; gap: 16px;
+      transition: all .22s; text-align: left;
+    }
+    .rc:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); transform: translateX(3px); }
+    .rc:active { transform: scale(.98); }
+    .rc-icon { width: 48px; height: 48px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .rc-label { font-size: 18px; font-weight: 600; color: #f0ebe3; font-family: 'Crimson Pro', serif; line-height: 1.2; margin-bottom: 3px; }
+    .rc-desc { font-size: 12px; color: #706860; font-family: 'DM Mono', monospace; }
+    .rc-arr { font-size: 24px; color: #333028; margin-left: auto; flex-shrink: 0; transition: color .2s; }
+    .rc:hover .rc-arr { color: #888078; }
+    .grp-lbl { font-size: 11px; letter-spacing: .18em; color: #444038; text-transform: uppercase; font-family: 'DM Mono', monospace; text-align: center; margin-bottom: 12px; }
+
+    /* App */
+    @keyframes bounce { 0%,80%,100%{transform:scale(0);opacity:.3} 40%{transform:scale(1);opacity:1} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes ripple { 0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)} 100%{box-shadow:0 0 0 14px rgba(239,68,68,0)} }
+    @keyframes spkPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @keyframes flashIn { 0%{opacity:0;transform:translateX(-50%) scale(.9)} 100%{opacity:1;transform:translateX(-50%) scale(1)} }
+    .msg-in { animation: fadeUp .25s ease forwards; }
+    .rb { width:100%; background:transparent; border:1px solid transparent; border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; align-items:center; gap:9px; color:#c8c2c0; font-family:'Crimson Pro',serif; font-size:18px; transition:all .18s; text-align:left; }
+    .rb:hover, .rb.act { background:rgba(255,255,255,.07); color:#f0ebe3; }
+    .rb.act { border-color:rgba(255,255,255,.1); }
+    .ib { border:none; border-radius:9px; width:40px; height:40px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; background:rgba(255,255,255,.06); color:#b8b2b0; }
+    .ib:hover { background:rgba(255,255,255,.12); color:#f0ebe3; }
+    .ib.mic-on { background:#ef4444; color:#fff; animation:ripple 1s ease-out infinite; }
+    .sb { background:var(--rc,#e8a87c); border:none; border-radius:9px; width:40px; height:40px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; color:#0f0e0c; }
+    .sb:hover:not(:disabled) { opacity:.8; transform:scale(1.05); }
+    .sb:disabled { opacity:.2; cursor:not-allowed; }
+    .ti { flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 14px; color:#f0ebe3; font-family:'Crimson Pro',serif; font-size:18px; resize:none; outline:none; line-height:1.5; transition:border-color .2s; min-height:44px; max-height:130px; }
+    .ti::placeholder { color:#7a7470; }
+    .ti:focus { border-color:rgba(255,255,255,.25); }
+    .ti.von { border-color:rgba(239,68,68,.4); background:rgba(239,68,68,.04); }
+    .ab { background:transparent; border:none; cursor:pointer; color:#a8a29f; font-size:15px; padding:3px 7px; border-radius:4px; font-family:'DM Mono',monospace; transition:color .2s; display:flex; align-items:center; gap:4px; }
+    .ab:hover { color:#f0ebe3; }
+    .ab.spk { color:var(--rc,#e8a87c); animation:spkPulse 1.2s ease infinite; }
+    ::-webkit-scrollbar { width:2px; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:1px; }
+    select { background:#1a1916; border:1px solid rgba(255,255,255,.08); border-radius:6px; color:#b8b2b0; font-family:'DM Mono',monospace; font-size:14px; padding:5px 7px; cursor:pointer; outline:none; }
+    .glabel { font-size:13px; letter-spacing:.14em; color:#888280; text-transform:uppercase; padding:10px 6px 4px; font-family:'DM Mono',monospace; }
+    .flash { position:fixed; top:12px; left:50%; transform:translateX(-50%); background:#1c1a17; border:1px solid rgba(255,255,255,.12); border-radius:11px; padding:9px 16px; display:flex; align-items:center; gap:9px; font-size:15px; color:#f0ebe3; z-index:999; animation:flashIn .3s ease; box-shadow:0 6px 24px rgba(0,0,0,.7); pointer-events:none; white-space:nowrap; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+function makeIcon(size) {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0f0e0c'; ctx.fillRect(0,0,size,size);
+    ctx.fillStyle = '#1c1a17';
+    const r=size*.2,x=size*.1,w=size*.8;
+    ctx.beginPath(); ctx.moveTo(x+r,x); ctx.lineTo(x+w-r,x); ctx.arcTo(x+w,x,x+w,x+r,r); ctx.lineTo(x+w,x+w-r); ctx.arcTo(x+w,x+w,x+w-r,x+w,r); ctx.lineTo(x+r,x+w); ctx.arcTo(x,x+w,x,x+w-r,r); ctx.lineTo(x,x+r); ctx.arcTo(x,x,x+r,x,r); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e8a87c'; ctx.font=`bold ${size*.42}px Arial,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('J',size/2,size/2+size*.04);
+    return c.toDataURL('image/png');
+  } catch(e){return'';}
+}
+const icon192=makeIcon(192), icon512=makeIcon(512);
+const mBlob=new Blob([JSON.stringify({name:'Jarvis',short_name:'Jarvis',description:'Il tuo assistente AI personale',start_url:'./',display:'standalone',background_color:'#0f0e0c',theme_color:'#0f0e0c',orientation:'portrait-primary',icons:[{src:icon192,sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:icon512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]})],{type:'application/json'});
+const mLink=document.createElement('link'); mLink.rel='manifest'; mLink.href=URL.createObjectURL(mBlob); document.head.appendChild(mLink);
+if(icon192){const al=document.createElement('link');al.rel='apple-touch-icon';al.href=icon192;document.head.appendChild(al);}
+if('serviceWorker' in navigator){const sw=`const C='j1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==C).map(n=>caches.delete(n)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.url.includes('api.anthropic.com')||e.request.url.includes('fonts.g'))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{if(res.ok){const rc=res.clone();caches.open(C).then(c=>c.put(e.request,rc));}return res;}).catch(()=>new Response('Offline',{status:503}))));});`;navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});}
+</script>
+<script type="text/babel">
+const {useState,useRef,useEffect,useCallback}=React;
+
+const store={
+  get:(k)=>{try{return localStorage.getItem(k);}catch{return null;}},
+  set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}},
+  del:(k)=>{try{localStorage.removeItem(k);}catch{}}
+};
+
+const ROLES=[
+  {id:'copywriter',label:'Copywriter',icon:'✍️',color:'#e8a87c',group:'Contenuti',keywords:['copywriter','copy','testi'],prompt:'Sei un copywriter esperto. Crei testi persuasivi per social, web, brochure, newsletter. Scrivi sempre in italiano. Proponi varianti e spieghi le scelte stilistiche.'},
+  {id:'social',label:'Social Media',icon:'📱',color:'#7ec8e3',group:'Contenuti',keywords:['social','instagram','facebook','linkedin'],prompt:'Sei un esperto di social media marketing. Crei post per Instagram, Facebook, LinkedIn con hashtag e call-to-action efficaci. Scrivi sempre in italiano.'},
+  {id:'press',label:'Ufficio Stampa',icon:'📰',color:'#a8d8a8',group:'Contenuti',keywords:['ufficio stampa','comunicato','stampa','press'],prompt:'Sei un esperto di ufficio stampa. Redigi comunicati, articoli e testi istituzionali professionali. Scrivi in italiano rispettando le 5 W e la piramide rovesciata.'},
+  {id:'creative',label:'Creativo',icon:'🎨',color:'#d4a5e5',group:'Contenuti',keywords:['creativo','creatività','idee','concept'],prompt:'Sei un direttore creativo. Generi idee originali per campagne, concept visivi e storytelling. Scrivi sempre in italiano. Proponi idee audaci.'},
+  {id:'translator',label:'Traduttore',icon:'🌍',color:'#f7dc6f',group:'Contenuti',keywords:['traduttore','traduzione','traduci','translator'],prompt:'Sei un traduttore esperto. Traduci mantenendo tono e sfumature culturali. Lavori tra italiano, inglese, francese e spagnolo.'},
+  {id:'glide',label:'Glide',icon:'⚡',color:'#6c8fff',group:'Tecnici',keywords:['glide','glide app'],prompt:'Sei un esperto di Glide (glideapps.com). Conosci Glide Tables, Google Sheets come sorgente, colonne calcolate (Math, If-Then-Else, Lookup, Rollup, Relations, Template), componenti UI, visibility conditions, Actions (Set Column, Add Row, Navigate, Webhook/HTTP Request), User Profiles, Row Owners, piano Maker, Glide AI columns. Aiuta step by step. Analizza screenshot. Rispondi in italiano.'},
+  {id:'make',label:'Make',icon:'🔄',color:'#a855f7',group:'Tecnici',keywords:['make','integromat','make.com'],prompt:'Sei un esperto di Make (ex Integromat). Conosci scenario builder, trigger, moduli (HTTP, Webhooks, Google Sheets, Gmail, JSON, Array, Text, Math), webhook, router, error handling, debug. Analizza screenshot. Rispondi in italiano.'},
+  {id:'zapier',label:'Zapier',icon:'⚡',color:'#ff6b35',group:'Tecnici',keywords:['zapier','zap'],prompt:'Sei un esperto di Zapier. Conosci Zap builder multi-step, Webhooks by Zapier, Formatter, Filter, Paths, Delay, Code step (JavaScript/Python). Analizza screenshot. Scrivi il codice dei Code step. Rispondi in italiano.'},
+  {id:'n8n',label:'n8n',icon:'🔗',color:'#ea580c',group:'Tecnici',keywords:['n8n','ennotto'],prompt:'Sei un esperto di n8n. Conosci Webhook node, HTTP Request, Google Sheets, Gmail, IF, Switch, Merge, Set, Code node (JavaScript: $input.all(), $json, $node), expressions. Analizza screenshot. Scrivi JavaScript completo. Rispondi in italiano.'},
+  {id:'gsheets',label:'Google Sheets',icon:'📊',color:'#34a853',group:'Tecnici',keywords:['google sheets','sheets','script','apps script','foglio'],prompt:'Sei un esperto di Google Sheets e Apps Script. Formule: QUERY, ARRAYFORMULA, IMPORTRANGE, VLOOKUP, XLOOKUP, FILTER, SORT, UNIQUE, COUNTIFS, SUMIFS, IFS, IFERROR, REGEXMATCH, SPLIT, TEXTJOIN. Apps Script: SpreadsheetApp, trigger (onEdit, time-driven), UrlFetchApp, doPost(e), Web App. Analizza screenshot. Formule pronte, script commentati. Rispondi in italiano.'},
+  {id:'custom',label:'Personalizzato',icon:'⚙️',color:'#f1948a',group:'Contenuti',keywords:['personalizzato','custom','libero'],prompt:'Sei un assistente versatile. Aiuti con qualsiasi richiesta. Analizzi immagini e documenti. Rispondi in italiano.'},
+];
+const GROUPS=['Contenuti','Tecnici'];
+const SK=(id)=>'jarvis-chat-'+id;
+
+const ROLE_DESC={copywriter:'testi, headline, brochure',social:'post, caption, hashtag',press:'comunicati, articoli',creative:'idee, concept, campagne',translator:'italiano · inglese · francese',glide:'app no-code',make:'automazioni visibili',zapier:'zap multi-step',n8n:'workflow open-source',gsheets:'formule e Apps Script',custom:'istruzioni libere'};
+
+const detectRole=(t)=>{
+  const txt=t.toLowerCase().trim();
+  const m=txt.match(/^(passa a|vai a|cambia a|usa|apri|switch to|go to|use)\s+(.+)$/);
+  const cand=m?m[2]:txt;
+  let best=null,score=0;
+  for(const r of ROLES) for(const kw of r.keywords) if(cand.includes(kw)&&kw.length>score){score=kw.length;best=r;}
+  return score>0?best:null;
+};
+
+const toB64=(file)=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+
+const buildBlocks=(text,atts)=>{
+  const blocks=[];
+  for(const a of atts){
+    if(a.type==='image')blocks.push({type:'image',source:{type:'base64',media_type:a.mt,data:a.data}});
+    else if(a.type==='pdf')blocks.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:a.data}});
+    else if(a.type==='text')blocks.push({type:'text',text:'[File: '+a.name+']\n\n'+a.text});
+  }
+  if(text)blocks.push({type:'text',text});
+  return blocks;
+};
+
+function useTTS(){
+  const synth=typeof window!=='undefined'?window.speechSynthesis||null:null;
+  const [speaking,setSpeaking]=useState(false);
+  const [spIdx,setSpIdx]=useState(null);
+  const [lang,setLang]=useState('it-IT');
+  const [voices,setVoices]=useState([]);
+  const [elKey,setElKey]=useState(()=>store.get('elevenlabs-key')||'');
+  const [elVoice,setElVoice]=useState(()=>store.get('elevenlabs-voice')||'cgSgspJ2msm6clMCkdW9'); // Isabella - Italian
+  const audioRef=useRef(null);
+
+  useEffect(()=>{if(!synth)return;const load=()=>setVoices(synth.getVoices());load();synth.onvoiceschanged=load;return()=>synth.cancel();},[]);
+
+  const stopAudio=useCallback(()=>{
+    if(audioRef.current){audioRef.current.pause();audioRef.current=null;}
+    if(synth)synth.cancel();
+    setSpeaking(false);setSpIdx(null);
+  },[synth]);
+
+  const speakEL=useCallback(async(text,idx)=>{
+    if(spIdx===idx&&speaking){stopAudio();return;}
+    setSpeaking(true);setSpIdx(idx);
+    try{
+      // Strip markdown for TTS
+      const clean=text.replace(/<[^>]*>/g,'').replace(/[#*`_~]/g,'').replace(/\n+/g,' ').trim();
+      const res=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+elVoice,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','xi-api-key':elKey},
+        body:JSON.stringify({text:clean,model_id:'eleven_multilingual_v2',voice_settings:{stability:0.5,similarity_boost:0.8,style:0.2,use_speaker_boost:true}})
+      });
+      if(!res.ok){const e=await res.json();throw new Error(e.detail?.message||'ElevenLabs error');}
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const audio=new Audio(url);
+      audioRef.current=audio;
+      audio.onended=()=>{setSpeaking(false);setSpIdx(null);URL.revokeObjectURL(url);};
+      audio.onerror=()=>{setSpeaking(false);setSpIdx(null);};
+      audio.play();
+    }catch(e){
+      console.error('EL TTS error:',e);
+      setSpeaking(false);setSpIdx(null);
+      // Fallback to browser TTS
+      if(synth){
+        const clean=text.replace(/<[^>]*>/g,'').replace(/[#*`_~]/g,'').trim();
+        const u=new SpeechSynthesisUtterance(clean);u.lang=lang;
+        u.onend=()=>{setSpeaking(false);setSpIdx(null);};
+        synth.speak(u);
+        setSpeaking(true);setSpIdx(idx);
+      }
+    }
+  },[elKey,elVoice,spIdx,speaking,stopAudio,synth,lang]);
+
+  const speakBrowser=useCallback((text,idx)=>{
+    if(!synth)return;synth.cancel();
+    if(spIdx===idx&&speaking){setSpeaking(false);setSpIdx(null);return;}
+    const clean=text.replace(/<[^>]*>/g,'').replace(/[#*`_~]/g,'').trim();
+    const u=new SpeechSynthesisUtterance(clean);u.lang=lang;
+    const v=voices.find(v=>v.lang===lang)||voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
+    if(v)u.voice=v;
+    u.onstart=()=>{setSpeaking(true);setSpIdx(idx);};
+    u.onend=u.onerror=()=>{setSpeaking(false);setSpIdx(null);};
+    synth.speak(u);
+  },[synth,lang,voices,speaking,spIdx]);
+
+  const speak=useCallback((text,idx)=>{
+    if(elKey)speakEL(text,idx);
+    else speakBrowser(text,idx);
+  },[elKey,speakEL,speakBrowser]);
+
+  const saveElKey=(k)=>{store.set('elevenlabs-key',k);setElKey(k);};
+  const saveElVoice=(v)=>{store.set('elevenlabs-voice',v);setElVoice(v);};
+
+  return{speak,stop:stopAudio,speaking,spIdx,lang,setLang,supported:true,elKey,setElKey:saveElKey,elVoice,setElVoice:saveElVoice};
+}
+
+const SendIcon=()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+const MicIcon=({on})=><svg width="15" height="15" viewBox="0 0 24 24" fill={on?'currentColor':'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>;
+const AttachIcon=()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>;
+const CamIcon=()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
+const SpkIcon=({on})=><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>{on?<><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></>:<><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></>}</svg>;
+const MenuIcon=()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+const Dots=()=><div style={{display:'flex',gap:5,padding:'4px 0',alignItems:'center'}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:'50%',background:'rgba(255,255,255,.6)',animation:'bounce 1.2s ease-in-out infinite',animationDelay:i*.2+'s'}}/>)}</div>;
+
+function Setup({onSave}){
+  const [key,setKey]=useState('');
+  const ok=key.trim().startsWith('sk-');
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 28px',gap:24,background:'#0f0e0c'}}>
+      <div style={{fontSize:52,fontWeight:700,color:'#e8a87c',fontFamily:"'DM Mono',monospace",letterSpacing:'-3px'}}>J.</div>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:26,fontWeight:600,color:'#f0ebe3',marginBottom:8,letterSpacing:'.02em'}}>JARVIS</div>
+        <div style={{fontSize:15,lineHeight:1.8,color:'#b8b2ae',fontFamily:"'DM Mono',monospace"}}>
+          Inserisci la tua Anthropic API Key<br/>per attivare Jarvis.
+        </div>
+      </div>
+      <div style={{width:'100%',maxWidth:360,display:'flex',flexDirection:'column',gap:12}}>
+        <input type="password" placeholder="sk-ant-api03-..." value={key} onChange={e=>setKey(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter'&&ok)onSave(key.trim());}}
+          style={{background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.12)',borderRadius:10,padding:'12px 16px',color:'#f0ebe3',fontSize:15,outline:'none',fontFamily:"'DM Mono',monospace",width:'100%'}}/>
+        <button onClick={()=>{if(ok)onSave(key.trim());}} disabled={!ok}
+          style={{background:ok?'#e8a87c':'rgba(255,255,255,.08)',border:'none',borderRadius:10,padding:'13px',color:ok?'#0f0e0c':'#4a4540',fontSize:16,fontWeight:600,cursor:ok?'pointer':'not-allowed',transition:'all .2s'}}>
+          Attiva Jarvis →
+        </button>
+      </div>
+      <div style={{fontSize:13,color:'#a09995',fontFamily:"'DM Mono',monospace",textAlign:'center',lineHeight:1.8}}>
+        La chiave viene salvata solo sul tuo dispositivo.
+      </div>
+    </div>
+  );
+}
+
+function Welcome({onSelect, onSettings}){
+  const [vis,setVis]=useState(false);
+  const [wListening,setWListening]=useState(false);
+  const [wInterim,setWInterim]=useState('');
+  const [wError,setWError]=useState('');
+  const recRef=useRef(null);
+  useEffect(()=>{setTimeout(()=>setVis(true),80);},[]);
+  const choose=(r)=>{setVis(false);setTimeout(()=>onSelect(r),240);};
+
+  const toggleMic=()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){setWError('Microfono non supportato su questo browser');return;}
+    if(wListening){
+      if(recRef.current){recRef.current.stop();recRef.current=null;}
+      setWListening(false);setWInterim('');return;
+    }
+    setWError('');
+    const r=new SR();r.lang='it-IT';r.interimResults=true;r.continuous=false;
+    r.onstart=()=>setWListening(true);
+    r.onresult=e=>{
+      let fin='',int='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0].transcript;
+        if(e.results[i].isFinal)fin+=t;else int+=t;
+      }
+      if(fin){
+        const nr=detectRole(fin);
+        if(nr){setWInterim('');setWListening(false);choose(nr);}
+        else{setWInterim('');setWError('Non ho capito. Riprova: "usa Glide", "passa a Make"...');}
+      } else setWInterim(int);
+    };
+    r.onerror=()=>{setWListening(false);setWInterim('');setWError('Errore microfono. Riprova.');};
+    r.onend=()=>{setWListening(false);recRef.current=null;};
+    recRef.current=r;r.start();
+  };
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',background:'#0f0e0c',opacity:vis?1:0,transition:'opacity .35s ease',overflowY:'auto',overflowX:'hidden'}}>
+      <div style={{width:'100%',maxWidth:560}}>
+        {/* Settings button top-left */}
+        <div style={{position:'sticky',top:0,zIndex:10,display:'flex',justifyContent:'flex-start',padding:'14px 20px 0'}}>
+          <button onClick={onSettings} style={{background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',borderRadius:10,width:40,height:40,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#b8b2b0',transition:'all .2s'}}
+            onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,.12)';e.currentTarget.style.color='#f0ebe3';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.06)';e.currentTarget.style.color='#b8b2b0';}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+        <div className="w-anim" style={{animationDelay:'.05s',padding:'24px 28px 32px',textAlign:'center'}}>
+          <div style={{fontSize:52,fontWeight:700,color:'#e8a87c',fontFamily:"'DM Mono',monospace",letterSpacing:'-3px',lineHeight:1,marginBottom:20}}>J.</div>
+          <div style={{fontSize:34,fontWeight:600,color:'#f0ebe3',fontFamily:"'Crimson Pro',serif",lineHeight:1.25,marginBottom:12}}>Ciao Paolo,<br/>sono Friday.</div>
+          <div style={{display:'inline-flex',alignItems:'center',gap:10,justifyContent:'center'}}>
+            <div style={{fontSize:19,color:'#908880',fontFamily:"'Crimson Pro',serif"}}>In cosa posso aiutarti oggi?</div>
+            <button onClick={toggleMic} title={wListening?'Ferma':'Parla per scegliere'} style={{
+              background:wListening?'#ef4444':'rgba(255,255,255,.08)',
+              border:'1px solid '+(wListening?'#ef4444':'rgba(255,255,255,.15)'),
+              borderRadius:'50%',width:34,height:34,cursor:'pointer',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              flexShrink:0,transition:'all .2s',
+              boxShadow:wListening?'0 0 0 6px rgba(239,68,68,.2)':'none',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={wListening?'white':'#c8c2c0'} stroke={wListening?'white':'#c8c2c0'} strokeWidth="0" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path fill="none" stroke={wListening?'white':'#c8c2c0'} strokeWidth="2" d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line stroke={wListening?'white':'#c8c2c0'} strokeWidth="2" x1="12" y1="19" x2="12" y2="23"/>
+                <line stroke={wListening?'white':'#c8c2c0'} strokeWidth="2" x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          {wInterim&&<div style={{marginTop:10,fontSize:14,color:'rgba(240,235,227,.5)',fontStyle:'italic',fontFamily:"'Crimson Pro',serif"}}>{wInterim}…</div>}
+          {wError&&<div style={{marginTop:8,fontSize:13,color:'#f87171',fontFamily:"'DM Mono',monospace"}}>{wError}</div>}
+          {wListening&&!wInterim&&<div style={{marginTop:10,fontSize:13,color:'#ef4444',fontFamily:"'DM Mono',monospace"}}>In ascolto… dì "usa Glide", "passa a Make"…</div>}
+        </div>
+        <div style={{padding:'0 20px 40px',display:'flex',flexDirection:'column',gap:32}}>
+          {GROUPS.map((group,gi)=>(
+            <div key={group} className="w-anim" style={{animationDelay:.18+gi*.1+'s'}}>
+              <div className="grp-lbl">{group}</div>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                {ROLES.filter(r=>r.group===group).map(r=>(
+                  <button key={r.id} className="rc" onClick={()=>choose(r)}>
+                    <div className="rc-icon" style={{background:r.color+'25',border:'1px solid '+r.color+'50'}}>
+                      <span>{r.icon}</span>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="rc-label">{r.label}</div>
+                      <div className="rc-desc">{ROLE_DESC[r.id]||''}</div>
+                    </div>
+                    <div className="rc-arr">›</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Simple Markdown Renderer ─────────────────────────────
+function renderMD(text) {
+  if (!text) return '';
+  return text
+    // Code blocks
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:12px 14px;font-family:\'DM Mono\',monospace;font-size:13px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;color:#c8e6c9;margin:8px 0">$1</pre>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,.4);padding:2px 6px;border-radius:4px;font-family:\'DM Mono\',monospace;font-size:13px;color:#c8e6c9">$1</code>')
+    // Bold
+    .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#f0ebe3;font-weight:600">$1</strong>')
+    // Italic
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    // H1
+    .replace(/^# (.+)$/gm, '<div style="font-size:20px;font-weight:600;color:#f0ebe3;margin:12px 0 6px">$1</div>')
+    // H2
+    .replace(/^## (.+)$/gm, '<div style="font-size:17px;font-weight:600;color:#e8a87c;margin:10px 0 5px">$1</div>')
+    // H3
+    .replace(/^### (.+)$/gm, '<div style="font-size:15px;font-weight:600;color:#c8c2c0;margin:8px 0 4px">$1</div>')
+    // Horizontal rule
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:10px 0"/>')
+    // Numbered list
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="display:flex;gap:8px;margin:3px 0"><span style="color:#e8a87c;flex-shrink:0;font-family:\'DM Mono\',monospace;font-size:13px">$1.</span><span>$2</span></div>')
+    // Bullet list - and *
+    .replace(/^[-*] (.+)$/gm, '<div style="display:flex;gap:8px;margin:3px 0"><span style="color:#e8a87c;flex-shrink:0">·</span><span>$1</span></div>')
+    // Newlines to <br> (but not after block elements)
+    .replace(/\n(?!<)/g, '<br/>');
+}
+
+function App(){
+  const [apiKey,setApiKey]=useState(()=>store.get('jarvis-apikey')||'');
+  const [role,setRole]=useState(ROLES[0]);
+  const [showWelcome,setShowWelcome]=useState(true);
+  const [customPrompt,setCustomPrompt]=useState('');
+  const [messages,setMessages]=useState([]);
+  const [input,setInput]=useState('');
+  const [atts,setAtts]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [sidebar,setSidebar]=useState(false);
+  const [copied,setCopied]=useState(null);
+  const [listening,setListening]=useState(false);
+  const [voiceOk,setVoiceOk]=useState(false);
+  const [voiceLang,setVoiceLang]=useState('it-IT');
+  const [interim,setInterim]=useState('');
+  const [roleFlash,setRoleFlash]=useState(null);
+  const [drag,setDrag]=useState(false);
+  const [camera,setCamera]=useState(false);
+  const [camStream,setCamStream]=useState(null);
+  const [autoSpeak,setAutoSpeak]=useState(false);
+  const [editPrompt,setEditPrompt]=useState(false);
+
+  const tts=useTTS();
+  const recRef=useRef(null);
+  const bottomRef=useRef(null);
+  const taRef=useRef(null);
+  const fileRef=useRef(null);
+  const camFileRef=useRef(null);
+  const videoRef=useRef(null);
+  const canvasRef=useRef(null);
+
+  const saveKey=(k)=>{store.set('jarvis-apikey',k);setApiKey(k);};
+  const logout=()=>{store.del('jarvis-apikey');setApiKey('');};
+
+  useEffect(()=>{
+    try{const s=store.get(SK(role.id));setMessages(s?JSON.parse(s):[]);}catch{setMessages([]);}
+  },[role.id]);
+
+  useEffect(()=>{
+    if(messages.length===0)return;
+    try{store.set(SK(role.id),JSON.stringify(messages));}catch{}
+  },[messages,role.id]);
+
+  useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'});},[messages,loading]);
+  useEffect(()=>{
+    if(taRef.current){taRef.current.style.height='auto';taRef.current.style.height=Math.min(taRef.current.scrollHeight,130)+'px';}
+  },[input]);
+  useEffect(()=>{setVoiceOk(!!(window.SpeechRecognition||window.webkitSpeechRecognition));},[]);
+
+  useEffect(()=>{
+    if(camera&&videoRef.current){
+      navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+        .then(s=>{setCamStream(s);videoRef.current.srcObject=s;})
+        .catch(()=>setCamera(false));
+    }
+  },[camera]);
+
+  const closeCamera=()=>{if(camStream)camStream.getTracks().forEach(t=>t.stop());setCamStream(null);setCamera(false);};
+  const snapPhoto=()=>{
+    const v=videoRef.current,c=canvasRef.current;if(!v||!c)return;
+    c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+    c.toBlob(blob=>{if(!blob)return;processFiles([new File([blob],'foto_'+Date.now()+'.jpg',{type:'image/jpeg'})]);closeCamera();},'image/jpeg',.9);
+  };
+
+  const processFiles=useCallback(async(files)=>{
+    const res=[];
+    for(const f of files){
+      if(f.type.startsWith('image/')){const data=await toB64(f);res.push({id:Date.now()+Math.random(),type:'image',name:f.name,mt:f.type,data,prev:URL.createObjectURL(f)});}
+      else if(f.type==='application/pdf'){const data=await toB64(f);res.push({id:Date.now()+Math.random(),type:'pdf',name:f.name,data});}
+      else if(f.type.startsWith('text/')||f.type==='application/json'){const text=await f.text();res.push({id:Date.now()+Math.random(),type:'text',name:f.name,text});}
+    }
+    setAtts(p=>[...p,...res]);
+  },[]);
+
+  const handleFiles=e=>{if(e.target.files?.length)processFiles(Array.from(e.target.files));e.target.value='';};
+
+  const stopListen=useCallback(()=>{if(recRef.current){recRef.current.stop();recRef.current=null;}setListening(false);setInterim('');},[]);
+  const startListen=useCallback(()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
+    const r=new SR();r.lang=voiceLang;r.interimResults=true;r.continuous=false;
+    r.onstart=()=>setListening(true);
+    r.onresult=e=>{
+      let fin='',int='';
+      for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=t;else int+=t;}
+      if(fin){const nr=detectRole(fin);if(nr){setRole(nr);setEditPrompt(false);setRoleFlash(nr);setTimeout(()=>setRoleFlash(null),2000);setInterim('');}else{setInput(p=>(p?p+' ':'')+fin.trim());setInterim('');}}
+      else setInterim(int);
+    };
+    r.onerror=r.onend=()=>{setListening(false);setInterim('');recRef.current=null;};
+    recRef.current=r;r.start();
+  },[voiceLang]);
+
+  const activePrompt=role.id==='custom'&&customPrompt?customPrompt:role.prompt;
+
+  const send=async()=>{
+    if((!input.trim()&&atts.length===0)||loading)return;
+    stopListen();tts.stop();
+    const blocks=buildBlocks(input.trim(),atts);
+    const userMsg={role:'user',content:blocks};
+    const display={role:'user',content:input.trim(),atts:atts.map(a=>({type:a.type,name:a.name,prev:a.prev}))};
+    const history=messages.map(m=>({role:m.role,content:typeof m.content==='string'?m.content:m.content}));
+    setMessages(p=>[...p,display]);
+    setInput('');setAtts([]);
+    setLoading(true);
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4000,system:activePrompt,messages:[...history,userMsg]}),
+      });
+      const data=await res.json();
+      if(data.error){setMessages(p=>[...p,{role:'assistant',content:'Errore API\nTipo: '+data.error.type+'\nMessaggio: '+data.error.message+'\n\nSe dice "credit_balance" devi aggiungere credito su console.anthropic.com → Billing'}]);}
+      else{
+        const reply=data.content?.[0]?.text||'Nessuna risposta.';
+        setMessages(p=>{
+          const updated=[...p,{role:'assistant',content:reply}];
+          if(autoSpeak&&tts.supported)setTimeout(()=>tts.speak(reply,updated.length-1),200);
+          return updated;
+        });
+      }
+    }catch(e){setMessages(p=>[...p,{role:'assistant',content:'Errore di connessione. Verifica la rete.'}]);}
+    setLoading(false);
+  };
+
+  const clearChat=()=>{tts.stop();setMessages([]);try{store.del(SK(role.id));}catch{}};
+  const handleKey=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}};
+  const copy=(t,i)=>{navigator.clipboard?.writeText(t);setCopied(i);setTimeout(()=>setCopied(null),1800);};
+  const attIcon=t=>({image:'🖼',pdf:'📄',text:'📝'}[t]||'📎');
+
+  if(!apiKey)return <Setup onSave={saveKey}/>;
+  if(showWelcome)return <Welcome onSelect={(r)=>{setRole(r);setShowWelcome(false);}} onSettings={()=>setSidebar(true)}/> ;
+
+  const msgCount=Math.ceil(messages.length/2);
+
+  return(
+    <div style={{height:'100%',display:'flex',overflow:'hidden',background:'#0f0e0c'}}
+      onDragOver={e=>{e.preventDefault();setDrag(true);}}
+      onDragLeave={()=>setDrag(false)}
+      onDrop={e=>{e.preventDefault();setDrag(false);if(e.dataTransfer.files?.length)processFiles(Array.from(e.dataTransfer.files));}}>
+
+      {roleFlash&&<div className="flash"><div style={{width:24,height:24,borderRadius:5,background:roleFlash.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>{roleFlash.icon}</div><span style={{fontWeight:600}}>{roleFlash.label}</span></div>}
+
+      {drag&&<div style={{position:'fixed',inset:0,background:'rgba(15,14,12,.9)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,border:'2px dashed rgba(255,255,255,.2)',borderRadius:16,pointerEvents:'none'}}><div style={{textAlign:'center',color:'#f0ebe3'}}><div style={{fontSize:36,marginBottom:8}}>📎</div><div style={{fontSize:16}}>Rilascia il file</div></div></div>}
+
+      {camera&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.95)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:200,gap:16}}>
+        <video ref={videoRef} autoPlay playsInline style={{width:'min(90vw,420px)',borderRadius:14,background:'#000'}}/>
+        <canvas ref={canvasRef} style={{display:'none'}}/>
+        <div style={{display:'flex',gap:12}}>
+          <button onClick={snapPhoto} style={{background:'#fff',border:'none',borderRadius:'50%',width:58,height:58,cursor:'pointer',fontSize:24,display:'flex',alignItems:'center',justifyContent:'center'}}>📸</button>
+          <button onClick={closeCamera} style={{background:'rgba(255,255,255,.1)',border:'1px solid rgba(255,255,255,.2)',borderRadius:'50%',width:58,height:58,cursor:'pointer',color:'#f0ebe3',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+        </div>
+      </div>}
+
+      <input ref={fileRef} type="file" multiple accept="image/*,application/pdf,text/*,application/json" style={{display:'none'}} onChange={handleFiles}/>
+      <input ref={camFileRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={handleFiles}/>
+
+      {sidebar&&<>
+        <div onClick={()=>setSidebar(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:10}}/>
+        <div style={{position:'fixed',left:0,top:0,bottom:0,width:215,background:'#0c0b09',borderRight:'1px solid rgba(255,255,255,.06)',zIndex:11,display:'flex',flexDirection:'column',padding:'52px 9px 14px',gap:1,overflowY:'auto'}}>
+          <button onClick={()=>setSidebar(false)} style={{position:'absolute',top:12,right:10,background:'transparent',border:'none',cursor:'pointer',color:'#c8c2c0',fontSize:20,padding:4}}>✕</button>
+          {GROUPS.map(g=>(
+            <div key={g}>
+              <div className="glabel">{g}</div>
+              {ROLES.filter(r=>r.group===g).map(r=>(
+                <button key={r.id} className={'rb'+(role.id===r.id?' act':'')} onClick={()=>{setRole(r);setEditPrompt(false);setSidebar(false);}}>
+                  <span style={{fontSize:14}}>{r.icon}</span>
+                  <span style={{flex:1}}>{r.label}</span>
+                  {role.id===r.id&&<div style={{width:5,height:5,borderRadius:'50%',background:r.color,animation:'pulse 2s ease infinite'}}/>}
+                </button>
+              ))}
+            </div>
+          ))}
+          <div style={{flex:1}}/>
+          {tts.supported&&(
+            <div style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',borderRadius:9,padding:'9px 11px',fontSize:13,color:'#a09995',fontFamily:"'DM Mono',monospace",marginBottom:6}}>
+              <div style={{color:'#d0cac8',marginBottom:8,fontWeight:600}}>Voce — Friday</div>
+
+              {/* Auto-speak toggle */}
+              <label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',marginBottom:10}} onClick={()=>setAutoSpeak(v=>!v)}>
+                <div style={{width:28,height:15,borderRadius:8,background:autoSpeak?'#34a853':'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',position:'relative',flexShrink:0,transition:'background .2s'}}>
+                  <div style={{width:11,height:11,borderRadius:'50%',background:'#f0ebe3',position:'absolute',top:1,left:autoSpeak?'14px':'1px',transition:'left .2s'}}/>
+                </div>
+                Lettura automatica
+              </label>
+
+              {/* ElevenLabs section */}
+              <div style={{borderTop:'1px solid rgba(255,255,255,.06)',paddingTop:8,marginBottom:6}}>
+                <div style={{color:'#e8a87c',fontSize:11,marginBottom:5,display:'flex',alignItems:'center',gap:5}}>
+                  <span>🎙 Friday — ElevenLabs</span>
+                  {tts.elKey&&<span style={{color:'#34a853',fontSize:10}}>● attivo</span>}
+                </div>
+                <input
+                  type="password"
+                  placeholder="API key ElevenLabs..."
+                  value={tts.elKey}
+                  onChange={e=>tts.setElKey(e.target.value)}
+                  style={{width:'100%',background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.1)',borderRadius:6,padding:'5px 8px',color:'#f0ebe3',fontSize:11,outline:'none',fontFamily:"'DM Mono',monospace",marginBottom:6}}
+                />
+                {tts.elKey&&(
+                  <select value={tts.elVoice} onChange={e=>tts.setElVoice(e.target.value)} style={{width:'100%',marginBottom:4}}>
+                    <option value="cgSgspJ2msm6clMCkdW9">🇮🇹 Friday — Isabella (italiano)</option>
+                    <option value="onwK4e9ZLuTAKqWW03F9">🇮🇹 Daniel (italiano)</option>
+                    <option value="pFZP5JQG7iQjIQuC4Bku">🇮🇹 Friday — Lily (italiano)</option>
+                    <option value="EXAVITQu4vr4xnSDxMaL">🇺🇸 Friday — Sarah (inglese)</option>
+                    <option value="TX3LPaxmHKxFdv7VOQHJ">🇺🇸 Liam (inglese)</option>
+                  </select>
+                )}
+                {!tts.elKey&&<div style={{fontSize:10,color:'#555048',lineHeight:1.6}}>elevenlabs.io → free 10k chars/mese</div>}
+              </div>
+
+              {/* Browser lang fallback */}
+              {!tts.elKey&&(
+                <select value={tts.lang} onChange={e=>tts.setLang(e.target.value)} style={{width:'100%',marginTop:4}}>
+                  <option value="it-IT">🇮🇹 Italiano (browser)</option>
+                  <option value="en-US">🇺🇸 English (browser)</option>
+                  <option value="fr-FR">🇫🇷 Français (browser)</option>
+                  <option value="es-ES">🇪🇸 Español (browser)</option>
+                </select>
+              )}
+            </div>
+          )}
+          {voiceOk&&<div style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',borderRadius:9,padding:'9px 11px',fontSize:13,color:'#a09995',fontFamily:"'DM Mono',monospace",marginBottom:6,lineHeight:1.9}}>
+            <span style={{color:'#d0cac8',fontWeight:600}}>Comandi vocali</span><br/>
+            "passa a Make"<br/>"usa Glide"<br/>"cambia a Sheets"
+          </div>}
+          <button onClick={clearChat} style={{background:'transparent',border:'1px solid rgba(255,255,255,.07)',borderRadius:7,padding:'8px 10px',color:'#b8b2ae',cursor:'pointer',fontFamily:"'DM Mono',monospace",fontSize:13,marginTop:4,transition:'all .2s'}}
+            onMouseEnter={e=>e.target.style.color='#f87171'} onMouseLeave={e=>e.target.style.color='#b8b2ae'}>↺ Cancella cronologia</button>
+          <button onClick={()=>{tts.stop();setShowWelcome(true);setSidebar(false);}} style={{background:'transparent',border:'none',color:'#888280',cursor:'pointer',fontFamily:"'DM Mono',monospace",fontSize:12,padding:'6px 0',marginTop:4}}>⌂ Torna alla home</button>
+          <button onClick={logout} style={{background:'transparent',border:'none',color:'#555048',cursor:'pointer',fontFamily:"'DM Mono',monospace",fontSize:11,padding:'4px 0'}}>⊗ Reimposta API key</button>
+        </div>
+      </>}
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
+        <div style={{padding:'11px 14px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:10,background:'#0f0e0c',flexShrink:0}}>
+          <button onClick={()=>setSidebar(true)} style={{background:'transparent',border:'none',cursor:'pointer',color:'#c8c2c0',padding:4,borderRadius:6,display:'flex',alignItems:'center'}}><MenuIcon/></button>
+          <div style={{width:30,height:30,borderRadius:7,background:role.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,flexShrink:0,transition:'background .3s'}}>{role.icon}</div>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:19,fontWeight:600,color:'#f0ebe3',lineHeight:1.2}}>{role.label}</div>
+            <div style={{fontSize:12,color:'#a09995',fontFamily:"'DM Mono',monospace"}}>{msgCount===0?'pronto':msgCount+' scambi'}{tts.speaking&&' · in lettura…'}</div>
+          </div>
+          <button onClick={()=>setEditPrompt(e=>!e)} style={{marginLeft:'auto',background:'transparent',border:'1px solid rgba(255,255,255,.07)',borderRadius:6,padding:'4px 9px',color:'#b8b2ae',cursor:'pointer',fontFamily:"'DM Mono',monospace",fontSize:12,flexShrink:0}}>
+            {editPrompt?'✕':'⚙'}
+          </button>
+        </div>
+
+        {editPrompt&&<div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,.06)',background:'#0d0c0a',flexShrink:0}}>
+          <div style={{fontSize:11,color:'#a09995',marginBottom:5,fontFamily:"'DM Mono',monospace"}}>SYSTEM PROMPT — {role.id==='custom'?'modificabile':'sola lettura'}</div>
+          <textarea value={role.id==='custom'?(customPrompt||role.prompt):activePrompt}
+            onChange={e=>{if(role.id==='custom')setCustomPrompt(e.target.value);}}
+            readOnly={role.id!=='custom'} rows={4}
+            style={{width:'100%',background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.07)',borderRadius:8,padding:'8px 12px',color:role.id==='custom'?'#f0ebe3':'#a09995',fontFamily:"'DM Mono',monospace",fontSize:12,resize:'vertical',outline:'none',lineHeight:1.6}}/>
+        </div>}
+
+        <div style={{flex:1,overflowY:'auto',padding:'16px 14px 8px',display:'flex',flexDirection:'column',gap:14}}>
+          {messages.length===0&&<div style={{margin:'auto',textAlign:'center',color:'#4a4540',maxWidth:320,padding:'0 8px'}}>
+            <div style={{fontSize:32,marginBottom:10}}>{role.icon}</div>
+            <div style={{fontSize:22,color:'#c8c2c0',marginBottom:6}}>{role.label}</div>
+            <div style={{fontSize:15,lineHeight:1.8,color:'#a09995'}}>Ciao, sono pronto.<br/>Scrivi, parla, allega file o foto.</div>
+          </div>}
+
+          {messages.map((msg,i)=>{
+            const txt=typeof msg.content==='string'?msg.content:(Array.isArray(msg.content)?msg.content.filter(b=>b.type==='text').map(b=>b.text).join('\n'):'');
+            const isSpk=tts.spIdx===i&&tts.speaking;
+            return(
+              <div key={i} className="msg-in" style={{display:'flex',flexDirection:msg.role==='user'?'row-reverse':'row',gap:8,alignItems:'flex-start'}}>
+                {msg.role==='assistant'&&<div style={{width:26,height:26,borderRadius:6,background:role.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0,marginTop:2}}>{role.icon}</div>}
+                <div style={{maxWidth:'80%',display:'flex',flexDirection:'column',gap:3}}>
+                  {msg.atts?.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:5,justifyContent:msg.role==='user'?'flex-end':'flex-start',marginBottom:3}}>
+                    {msg.atts.map((a,ai)=><div key={ai} style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.08)',borderRadius:7,padding:'3px 7px',fontSize:12,color:'#a09a90'}}>
+                      {a.prev?<img src={a.prev} alt="" style={{width:28,height:28,objectFit:'cover',borderRadius:4}}/>:<span>{attIcon(a.type)}</span>}
+                      <span style={{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:"'DM Mono',monospace",fontSize:11}}>{a.name}</span>
+                    </div>)}
+                  </div>}
+                  {txt&&<div style={{background:msg.role==='user'?'rgba(255,255,255,.07)':'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',borderRadius:msg.role==='user'?'11px 11px 3px 11px':'11px 11px 11px 3px',padding:'11px 15px',fontSize:17,lineHeight:1.8,color:'#ede8e0'}} dangerouslySetInnerHTML={{__html:msg.role==='assistant'?renderMD(txt):txt.replace(/\n/g,'<br/>')}}/>}
+                  {msg.role==='assistant'&&<div style={{display:'flex',alignItems:'center',gap:2,'--rc':role.color}}>
+                    {tts.supported&&<button className={'ab'+(isSpk?' spk':'')} onClick={()=>tts.speak(txt,i)}><SpkIcon on={isSpk}/>{isSpk?'stop':'leggi'}</button>}
+                    <button className="ab" onClick={()=>copy(txt,i)}>{copied===i?'✓ copiato':'⎘ copia'}</button>
+                  </div>}
+                </div>
+              </div>
+            );
+          })}
+
+          {loading&&<div className="msg-in" style={{display:'flex',gap:8}}>
+            <div style={{width:26,height:26,borderRadius:6,background:role.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0,marginTop:2}}>{role.icon}</div>
+            <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',borderRadius:'11px 11px 11px 3px',padding:'11px 15px'}}><Dots/></div>
+          </div>}
+          <div ref={bottomRef}/>
+        </div>
+
+        {atts.length>0&&<div style={{padding:'7px 14px',borderTop:'1px solid rgba(255,255,255,.06)',display:'flex',gap:7,flexWrap:'wrap',background:'#0d0c0a',flexShrink:0}}>
+          {atts.map(a=><div key={a.id} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',borderRadius:8,padding:'4px 8px',fontSize:12,color:'#c8c3bb',position:'relative'}}>
+            {a.prev?<img src={a.prev} alt={a.name} style={{width:30,height:30,objectFit:'cover',borderRadius:4}}/>:<span style={{fontSize:17}}>{attIcon(a.type)}</span>}
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.name}</span>
+            <button onClick={()=>setAtts(p=>p.filter(x=>x.id!==a.id))} style={{background:'rgba(0,0,0,.5)',border:'none',borderRadius:'50%',width:15,height:15,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#f0ebe3',fontSize:9,position:'absolute',top:-5,right:-5}}>✕</button>
+          </div>)}
+        </div>}
+
+        <div style={{padding:'10px 14px 14px',borderTop:'1px solid rgba(255,255,255,.06)',background:'#0f0e0c',flexShrink:0}}>
+          {interim&&<div style={{marginBottom:6,padding:'4px 11px',background:'rgba(239,68,68,.07)',border:'1px solid rgba(239,68,68,.18)',borderRadius:8,fontSize:15,color:'rgba(240,235,227,.5)',fontStyle:'italic'}}>{interim}…</div>}
+          <div style={{display:'flex',gap:7,alignItems:'flex-end'}}>
+            <button className="ib" onClick={()=>fileRef.current?.click()} title="Allega file"><AttachIcon/></button>
+            <button className="ib" onClick={()=>{if(/Mobi|Android/i.test(navigator.userAgent))camFileRef.current?.click();else setCamera(true);}} title="Fotocamera"><CamIcon/></button>
+            <textarea ref={taRef} className={'ti'+(listening?' von':'')} value={input}
+              onChange={e=>setInput(e.target.value)} onKeyDown={handleKey}
+              placeholder={listening?'Sto ascoltando…':atts.length?'Aggiungi testo…':'Scrivi a '+role.label+'…'} rows={1}/>
+            {voiceOk&&<div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'center'}}>
+              <button className={'ib'+(listening?' mic-on':'')} onClick={()=>listening?stopListen():startListen()}><MicIcon on={listening}/></button>
+              <select value={voiceLang} onChange={e=>setVoiceLang(e.target.value)} style={{width:38,textAlign:'center'}}>
+                <option value="it-IT">🇮🇹</option><option value="en-US">🇺🇸</option>
+                <option value="fr-FR">🇫🇷</option><option value="es-ES">🇪🇸</option>
+              </select>
+            </div>}
+            <button className="sb" style={{'--rc':role.color}} onClick={send} disabled={(!input.trim()&&atts.length===0)||loading}>
+              <SendIcon/>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+try{
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+}catch(e){
+  document.getElementById('root').innerHTML='<div style="color:#e8a87c;padding:32px;font-family:monospace;font-size:14px;background:#0f0e0c;height:100vh"><b>Errore Jarvis:</b><br/>'+e.message+'</div>';
+}
+</script>
+</body>
+</html>
